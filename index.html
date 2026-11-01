@@ -753,7 +753,7 @@ addEventListener('m5topic',e=>{const id=e.detail;if(!ME||!U||lastW===id)return;l
 init();
 })();
 /* ===== ตัวนับผู้เข้าชม (GoatCounter) ครูดูสถิติที่ goatcounter.com ไม่แสดงตัวเลขบนเว็บ ===== */
-(function(){let n=0;const t=setInterval(()=>{const C=window.CFG;if(!C&&++n<40)return;clearInterval(t);const g=((C||{}).goatcounter||'').trim();if(!/^[a-z0-9-]+$/.test(g))return;
+(function(){let n=0;const t=setInterval(()=>{const C=window.CFG;if(!C&&++n<40)return;clearInterval(t);const g=((C||{}).goatcounter||'mathdevth').trim();if(!/^[a-z0-9-]+$/.test(g))return;
  window.goatcounter={no_onload:true};const s=document.createElement('script');s.async=true;s.dataset.goatcounter=`https://${g}.goatcounter.com/count`;s.src='https://gc.zgo.at/count.js';
  s.onload=()=>{const send=()=>{const h=(location.hash||'').slice(1).split('/')[0];const tp=T[h];try{window.goatcounter.count({path:'/m5x/'+(h||'home'),title:tp?`ม.5 เพิ่มเติม ${tp.k} ${tp.title}`:'ม.5 เพิ่มเติม หน้าแรก'})}catch(e){}};send();addEventListener('hashchange',send)};document.head.appendChild(s)},150)})();
 
@@ -1035,5 +1035,79 @@ return{book,advise,fab,_load:load};
 window.M5Plus=KPlus({site:'m5x',ansEvent:'m5ans',testCol:'m5tests',ctx:()=>window.M5X?M5X():{},
  title:c=>T[c]&&typeof G[c]==='function'?T[c].k+' '+T[c].title:null,drill:(c,g)=>M5Drill.open(c,{goal:g}),
  unitTopics:(t,u)=>{const x=UNITS.find(v=>v.u==u&&(v.term==null||t==null||v.term==t));return x?x.topics:[]}});
+</script>
+<script>
+/* ===== อธิบายเหตุผลแบบ CER (ข้อกล่าวอ้าง · หลักฐาน · เหตุผล) ใช้ร่วม ม.3 ม.5 ม.5+ ===== */
+window.KReason=function(A){
+/* A={site, ctx()->{DB,U,ME,T}, tasks:[{id,where,title,q,data,model:{C,E,R}}], place(task)->host element|null, hook(fn) optional for SPA re-render} */
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const css=document.createElement('style');css.textContent=`
+.krs{margin:18px 0;padding:16px 18px;border-radius:18px;border:2px solid #e0558f;background:color-mix(in srgb,#e0558f 6%,transparent);text-align:left}
+.krs h3{margin:0 0 4px;font-size:18px}.krs .kq{font-size:17px;margin:8px 0}.krs .kd{overflow:auto;margin:8px 0}
+.krs table{border-collapse:collapse;min-width:280px}.krs td,.krs th{border:1px solid color-mix(in srgb,currentColor 25%,transparent);padding:4px 10px;text-align:center}
+.krs label.kf{display:block;margin:10px 0 4px;font-weight:700}.krs label.kf i{font-style:normal;font-weight:400;opacity:.75;font-size:14px;display:block}
+.krs textarea{width:100%;box-sizing:border-box;min-height:64px;font:inherit;color:inherit;background:transparent;border:1px solid color-mix(in srgb,currentColor 30%,transparent);border-radius:12px;padding:8px 10px;resize:vertical}
+.krs .tg{display:inline-block;border-radius:8px;padding:0 8px;color:#fff;font-size:13px;margin-right:6px}.krs .tC{background:#e0558f}.krs .tE{background:#2f7de1}.krs .tR{background:#17a673}
+.krs .ck{display:grid;gap:6px;margin:10px 0}.krs .ck label{display:flex;gap:8px;align-items:center;font-size:15px}
+.krs .ck input{width:20px;height:20px}
+.krs .kb{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.krs button{font:inherit;border-radius:12px;padding:8px 14px;min-height:42px;cursor:pointer;border:1px solid color-mix(in srgb,currentColor 25%,transparent);background:transparent;color:inherit}
+.krs button.p{background:#e0558f;border-color:#e0558f;color:#fff;font-weight:600}
+.krs .model{margin-top:10px;padding:10px 14px;border-radius:12px;border-left:5px solid #17a673;background:color-mix(in srgb,#17a673 10%,transparent)}
+.krs .msg{font-size:14px;opacity:.85;margin-top:6px}
+.krs .tv table{width:100%;font-size:14px}.krs .tv td{text-align:left;vertical-align:top}`;document.head.appendChild(css);
+const key=t=>{const c=A.ctx()||{};return 'krs-'+A.site+'-'+(c.U&&c.U.uid||'guest')+'-'+t.id};
+const fs=()=>window.firebase&&firebase.firestore?firebase.firestore():null;
+async function save(t,d){const c=A.ctx()||{};if(!c.DB||!c.U||!c.ME)return false;const doc={uid:c.U.uid,sid:c.ME.sid||'',name:c.ME.name||'',cls:c.ME.cls||'',no:c.ME.no||'',site:A.site,task:t.id,title:t.title,C:d.C,E:d.E,R:d.R,self:d.self,time:window.firebase&&firebase.firestore?firebase.firestore.FieldValue.serverTimestamp():new Date()};
+ if(c.DB.set&&!c.DB.fs){await c.DB.set('reason/'+c.U.uid+'_'+A.site+'_'+t.id,doc,true);return true}const f=fs();if(!f)return false;await f.doc('reason/'+c.U.uid+'_'+A.site+'_'+t.id).set(doc,{merge:true});return true}
+async function list(t){const c=A.ctx()||{};let r=[];if(c.DB&&c.DB.q&&!c.DB.fs)r=await c.DB.q('reason',[['task','==',t.id]]);else{const s=await fs().collection('reason').where('task','==',t.id).get();r=s.docs.map(d=>({id:d.id,...d.data()}))}return r.filter(x=>x.site===A.site)}
+function card(t){const d=document.createElement('section');d.className='krs';d.dataset.task=t.id;let st={};try{st=JSON.parse(localStorage.getItem(key(t))||'{}')}catch(e){}
+ const c=A.ctx()||{};
+ d.innerHTML=`<h3>🔎 อธิบายเหตุผล (CER) · ${esc(t.title)}</h3><p class="msg">ตอบให้ครบ 3 ส่วน: <span class="tg tC">C</span>ข้อกล่าวอ้าง <span class="tg tE">E</span>หลักฐานจากข้อมูล <span class="tg tR">R</span>เหตุผลทางคณิตศาสตร์</p>
+ <div class="kq">${t.q}</div><div class="kd">${t.data||''}</div>
+ ${['C','E','R'].map(k=>`<label class="kf" for="k${t.id}${k}"><span class="tg t${k}">${k}</span>${{C:'ข้อกล่าวอ้าง',E:'หลักฐาน',R:'เหตุผล'}[k]}<i>${{C:'ตอบคำถามให้ตรงประเด็นในประโยคเดียว',E:'ยกตัวเลขหรือข้อมูลที่สนับสนุนคำตอบ อย่างน้อย 2 จุด',R:'อธิบายด้วยหลักคณิตศาสตร์ว่าทำไมหลักฐานนี้จึงสนับสนุนคำตอบ'}[k]}</i></label><textarea id="k${t.id}${k}" maxlength="800">${esc(st[k]||'')}</textarea>`).join('')}
+ <div class="ck"><b style="font-size:15px">ตรวจงานตัวเองก่อนส่ง</b>${[['c1','C ตอบคำถามตรงประเด็น'],['c2','E มีตัวเลขจากข้อมูลอย่างน้อย 2 จุด'],['c3','R ใช้หลักคณิตศาสตร์ ไม่ใช่ความรู้สึก']].map(([k,l])=>`<label><input type="checkbox" data-k="${k}" ${st.self&&st.self[k]?'checked':''}> ${l}</label>`).join('')}</div>
+ <div class="kb"><button type="button" class="p ks">ส่งคำตอบและดูตัวอย่างคำตอบ</button>${c.T?'<button type="button" class="kt">ดูคำตอบนักเรียน (ครู)</button>':''}</div><p class="msg km"></p><div class="mdl"></div><div class="tv"></div>`;
+ const get=()=>({C:d.querySelector(`#k${t.id}C`).value.trim(),E:d.querySelector(`#k${t.id}E`).value.trim(),R:d.querySelector(`#k${t.id}R`).value.trim(),self:Object.fromEntries([...d.querySelectorAll('.ck input')].map(i=>[i.dataset.k,i.checked]))});
+ d.querySelectorAll('textarea,.ck input').forEach(x=>x.addEventListener('input',()=>{try{localStorage.setItem(key(t),JSON.stringify(get()))}catch(e){}}));
+ const showModel=()=>{d.querySelector('.mdl').innerHTML=`<div class="model"><b>ตัวอย่างคำตอบ</b> (เขียนต่างได้ ถ้าเหตุผลถูกต้อง)<p><span class="tg tC">C</span>${t.model.C}</p><p><span class="tg tE">E</span>${t.model.E}</p><p><span class="tg tR">R</span>${t.model.R}</p></div>`};
+ if(st.sent)showModel();
+ d.querySelector('.ks').onclick=async()=>{const v=get(),m=d.querySelector('.km');if(!v.C||!v.E||!v.R){m.textContent='เขียนให้ครบทั้ง C, E และ R ก่อนส่ง';return}
+  v.sent=true;try{localStorage.setItem(key(t),JSON.stringify(v))}catch(e){}showModel();
+  try{const ok=await save(t,v);m.textContent=ok?'ส่งให้ครูแล้ว ✓ เทียบคำตอบของเรากับตัวอย่างด้านล่าง แก้แล้วส่งใหม่ได้':'ยังไม่ได้เข้าสู่ระบบ คำตอบเก็บไว้ในเครื่องนี้ ลองเทียบกับตัวอย่างด้านล่าง'}catch(e){m.textContent='ส่งไม่สำเร็จ ลองใหม่อีกครั้ง'}};
+ const kt=d.querySelector('.kt');if(kt)kt.onclick=async()=>{const V=d.querySelector('.tv');V.innerHTML='<p>กำลังโหลด…</p>';let r=[];try{r=await list(t)}catch(e){V.innerHTML='<p>โหลดไม่ได้ ตรวจกฎ Firestore ของ reason</p>';return}
+  r.sort((a,b)=>String(a.cls).localeCompare(b.cls,'th',{numeric:true})||(+a.no||0)-(+b.no||0));
+  V.innerHTML=`<p><b>ส่งแล้ว ${r.length} คน</b></p><div style="overflow:auto"><table><tr><th>ชั้น/เลขที่</th><th>ชื่อ</th><th>C</th><th>E</th><th>R</th><th>ตรวจตนเอง</th></tr>${r.map(x=>`<tr><td>${esc(x.cls)} / ${esc(x.no)}</td><td>${esc(x.name)}</td><td>${esc(x.C)}</td><td>${esc(x.E)}</td><td>${esc(x.R)}</td><td>${Object.values(x.self||{}).filter(Boolean).length}/3</td></tr>`).join('')||'<tr><td colspan="6">ยังไม่มีใครส่ง</td></tr>'}</table></div>`};
+ return d}
+function mount(){A.tasks.forEach(t=>{const h=A.place(t);if(!h||h.querySelector(`.krs[data-task="${t.id}"]`))return;h.appendChild(card(t))})}
+mount();if(A.hook)A.hook(mount);
+let lastU='';setInterval(()=>{const c=A.ctx()||{},k=(c.U&&c.U.uid||'')+(c.T?'T':'');if(k!==lastU){lastU=k;document.querySelectorAll('.krs').forEach(x=>x.remove());mount()}},1500);
+return{mount}};
+
+/* ---------- โจทย์ ---------- */
+const TB=(h,rows)=>`<table><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr>${rows.map(r=>`<tr>${r.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</table>`;
+window.KREASON_TASKS={
+m3:[
+ {id:'i',where:'i3',title:'อสมการ: แพ็กเกจเน็ตไหนคุ้ม',q:'แพ็กเกจ A จ่ายรายเดือน 150 บาท ใช้ได้ไม่จำกัด · แพ็กเกจ B จ่าย 60 บาท บวก 15 บาทต่อ GB · ถ้าใช้เน็ตเดือนละประมาณ 8 GB ควรเลือกแพ็กเกจใด',data:'',model:{C:'ควรเลือกแพ็กเกจ A',E:'B จ่าย 60 + 15(8) = 180 บาท ซึ่งมากกว่า A ที่จ่าย 150 บาท',R:'B คุ้มกว่าเมื่อ 60 + 15x &lt; 150 คือ x &lt; 6 GB เท่านั้น ใช้ 8 GB เกิน 6 GB จึงควรเลือก A'}},
+ {id:'f',where:'f3',title:'แยกตัวประกอบ: กล่องลูกบาศก์',q:'ลูกบาศก์ใหญ่ยาวด้านละ x ซม. ถูกตัดลูกบาศก์เล็กด้านละ 2 ซม. ออกไป ปริมาตรที่เหลือคือ x³ − 8 นักเรียนคนหนึ่งบอกว่า "ปริมาตรที่เหลือเท่ากับ (x − 2)³" ถูกหรือไม่',data:'',model:{C:'ไม่ถูกต้อง',E:'ถ้า x = 4: x³ − 8 = 56 แต่ (x − 2)³ = 8 ไม่เท่ากัน',R:'x³ − 8 แยกตัวประกอบได้ (x − 2)(x² + 2x + 4) ตามสูตรผลต่างกำลังสาม ไม่ใช่ (x − 2)³'}},
+ {id:'q',where:'q3',title:'สมการกำลังสอง: จรวดน้ำ',q:'ความสูงของจรวดน้ำ h = −5t² + 30t (เมตร) เพื่อนบอกว่า "จรวดจะตกถึงพื้นที่เวลา 3 วินาที" เห็นด้วยหรือไม่',data:'',model:{C:'ไม่เห็นด้วย จรวดตกถึงพื้นที่ 6 วินาที',E:'ที่ t = 3 จะได้ h = −45 + 90 = 45 เมตร ยังลอยอยู่ และ h = 0 เมื่อ t = 0 หรือ t = 6',R:'แก้สมการ −5t² + 30t = 0 ได้ −5t(t − 6) = 0 คำตอบ t = 6 คือเวลาที่ตกถึงพื้น ส่วน 3 วินาทีคือจุดสูงสุด'}},
+ {id:'s',where:'s3',title:'ความคล้าย: ป้ายโฆษณา',q:'ร้านต้องการขยายป้ายขนาด 40 × 60 ซม. เป็นป้ายกว้าง 1.2 เมตร พนักงานสั่งทำป้ายขนาด 1.2 × 1.4 เมตร ป้ายใหม่จะคล้ายป้ายเดิมหรือไม่',data:'',model:{C:'ไม่คล้าย ป้ายจะบิดเบี้ยว ควรสั่งขนาด 1.2 × 1.8 เมตร',E:'ป้ายเดิม 40 : 60 = 2 : 3 แต่ป้ายใหม่ 120 : 140 = 6 : 7',R:'รูปคล้ายต้องมีอัตราส่วนของด้านที่สมนัยเท่ากัน ตัวคูณขยาย 120/40 = 3 ด้านยาวจึงต้องเป็น 60 × 3 = 180 ซม.'}},
+ {id:'g',where:'g3',title:'ฟังก์ชันกำลังสอง: ตั้งราคาขาย',q:'ร้านขายน้ำปั่นพบว่าถ้าตั้งราคา x บาท จะได้กำไรต่อวัน P = −2x² + 160x − 2,000 บาท ควรตั้งราคาเท่าใดจึงได้กำไรมากที่สุด',data:'',model:{C:'ควรตั้งราคา 40 บาท ได้กำไรสูงสุด 1,200 บาทต่อวัน',E:'จุดยอดอยู่ที่ x = −160/(2 × −2) = 40 และ P(40) = −3,200 + 6,400 − 2,000 = 1,200',R:'a = −2 &lt; 0 กราฟคว่ำ จุดยอดจึงเป็นค่าสูงสุดของกำไร'}},
+ {id:'t',where:'t3',title:'สถิติ: เลือกตัวแทนแข่งขัน',q:'ครูต้องเลือกนักเรียน 1 คนไปแข่งยิงลูกโทษ จากคะแนนการซ้อม 9 ครั้ง (เต็ม 10) ควรเลือกใคร',data:TB(['','ค่าต่ำสุด','Q₁','Q₂','Q₃','ค่าสูงสุด'],[['ต้น',3,5,7,9,10],['ฝน',6,7,7,8,8]]),model:{C:'ควรเลือกฝน',E:'ทั้งสองคนมี Q₂ = 7 เท่ากัน แต่กล่องของฝนยาว 8 − 7 = 1 ส่วนของต้นยาว 9 − 5 = 4 และคะแนนต่ำสุดของฝนคือ 6 ส่วนต้นคือ 3',R:'มัธยฐานเท่ากัน แต่ข้อมูลของฝนกระจายน้อยกว่า ผลงานจึงสม่ำเสมอ เหมาะกับการแข่งที่มีโอกาสครั้งเดียว'}},
+ {id:'e',where:'e3',title:'ระบบสมการ: ค่าแท็กซี่สองเจ้า',q:'แท็กซี่ A เริ่มต้น 35 บาท กิโลเมตรละ 6 บาท · แท็กซี่ B เริ่มต้น 50 บาท กิโลเมตรละ 5 บาท ต้องเดินทาง 20 กิโลเมตร ควรเลือกเจ้าใด',data:'',model:{C:'ควรเลือก B',E:'A: 35 + 6(20) = 155 บาท · B: 50 + 5(20) = 150 บาท',R:'สองเจ้าจ่ายเท่ากันเมื่อ 35 + 6x = 50 + 5x คือ x = 15 กม. ถ้าไกลกว่า 15 กม. B ถูกกว่าเพราะคิดต่อกิโลเมตรน้อยกว่า'}},
+ {id:'c',where:'c4',title:'วงกลม: วางเสาไฟในสนาม',q:'สนามวงกลมมีทางเดินตรง (คอร์ด) ยาว 16 เมตร และจุดกึ่งกลางทางเดินห่างจากจุดศูนย์กลาง 6 เมตร ช่างบอกว่ารัศมีสนามประมาณ 8 เมตร ถูกหรือไม่',data:'',model:{C:'ไม่ถูก รัศมีคือ 10 เมตร',E:'ครึ่งคอร์ด 8 เมตร ระยะจากจุดศูนย์กลาง 6 เมตร → r = √(8² + 6²) = √100 = 10',R:'เส้นตั้งฉากจากจุดศูนย์กลางแบ่งครึ่งคอร์ด เกิดสามเหลี่ยมมุมฉาก ใช้ทฤษฎีบทพีทาโกรัสหารัศมี รัศมี 8 เมตรจะเท่ากับครึ่งคอร์ดพอดี ซึ่งเป็นไปไม่ได้'}},
+ {id:'v',where:'v3',title:'ปริมาตร: ไอศกรีมแบบไหนได้มากกว่า',q:'ร้าน A ขายไอศกรีมทรงกรวยรัศมี 3 ซม. สูง 12 ซม. ร้าน B ขายเป็นลูกกลมรัศมี 3 ซม. ราคาเท่ากัน ร้านไหนได้ไอศกรีมมากกว่า',data:'',model:{C:'ได้เท่ากัน',E:'กรวย = 1/3 π(3²)(12) = 36π · ทรงกลม = 4/3 π(3³) = 36π ลูกบาศก์ซม.',R:'คำนวณปริมาตรด้วยสูตรของแต่ละรูปทรงแล้วเปรียบเทียบ ได้ 36π เท่ากัน จึงคุ้มเท่ากัน'}},
+ {id:'p',where:'p3',title:'ความน่าจะเป็น: เกมนี้ยุติธรรมไหม',q:'ทอดลูกเต๋า 2 ลูก ถ้าผลรวมเป็นจำนวนคู่ ก ได้แต้ม ถ้าผลรวมเป็นจำนวนเฉพาะ ข ได้แต้ม เกมนี้ยุติธรรมหรือไม่',data:'',model:{C:'ไม่ยุติธรรม ก ได้เปรียบ',E:'ผลรวมคู่มี 18 แบบจาก 36 แบบ (1/2) · ผลรวมเป็นจำนวนเฉพาะ (2, 3, 5, 7, 11) มี 1 + 2 + 4 + 6 + 2 = 15 แบบ (15/36)',R:'ความน่าจะเป็นที่ ก ได้แต้ม 18/36 มากกว่า ข ที่ได้ 15/36 เกมยุติธรรมต้องมีความน่าจะเป็นเท่ากัน'}},
+ {id:'r',where:'r3',title:'ตรีโกณมิติ: ทางลาดรถเข็น',q:'มาตรฐานทางลาดสำหรับรถเข็นควรชันไม่เกินประมาณ 5° โรงเรียนจะทำทางลาดยาว 6 เมตร ขึ้นไปบนแท่นสูง 0.6 เมตร ผ่านมาตรฐานหรือไม่ (sin 5° ≈ 0.087)',data:'',model:{C:'ไม่ผ่าน ทางลาดชันเกินไป',E:'sin θ = 0.6/6 = 0.1 ซึ่งมากกว่า sin 5° ≈ 0.087',R:'sin มีค่าเพิ่มขึ้นเมื่อมุมแหลมใหญ่ขึ้น sin θ &gt; sin 5° แปลว่า θ &gt; 5° ควรทำทางลาดยาวอย่างน้อย 0.6/0.087 ≈ 6.9 เมตร'}}],
+m5:[
+ {id:'seq',where:'u3',title:'ลำดับ: เงินออมแบบไหนได้มากกว่า',q:'แบบ A: เดือนแรกออม 100 บาท แล้วเพิ่มเดือนละ 50 บาท · แบบ B: เดือนแรกออม 100 บาท แล้วออมเป็น 1.2 เท่าของเดือนก่อน · ภายใน 12 เดือน แบบใดได้เงินรวมมากกว่า',data:'',model:{C:'ภายใน 12 เดือน แบบ A ได้เงินรวมมากกว่า',E:'A: S₁₂ = 12/2 [2(100) + 11(50)] = 4,500 บาท · B: S₁₂ = 100(1.2¹² − 1)/(1.2 − 1) ≈ 3,958 บาท',R:'A เป็นอนุกรมเลขคณิต B เป็นอนุกรมเรขาคณิต แม้ B โตแบบทวีคูณ แต่ช่วง 12 เดือนแรกยังตามไม่ทัน ถ้าออมต่อถึงเดือนที่ 15 แบบ B จะแซง (A ≈ 6,750 บาท, B ≈ 7,203 บาท)'}},
+ {id:'int',where:'u4',title:'ดอกเบี้ย: ผ่อนมือถือคุ้มไหม',q:'มือถือราคาเงินสด 12,000 บาท ร้านให้ผ่อน 0% แต่ต้องจ่ายค่าธรรมเนียมเดือนละ 150 บาท นาน 12 เดือน · อีกทางคือเก็บเงินในบัญชีดอกเบี้ย 1.5% ต่อปี แล้วค่อยซื้อเงินสด ควรเลือกทางไหนถ้ามีเงินพอซื้อเงินสดตอนนี้',data:'',model:{C:'ควรซื้อเงินสด',E:'ผ่อน: จ่ายเพิ่มค่าธรรมเนียม 150 × 12 = 1,800 บาท · ถ้าเก็บ 12,000 บาทไว้ 1 ปีได้ดอกเบี้ย 12,000 × 0.015 = 180 บาท',R:'ค่าธรรมเนียม 1,800 บาทมากกว่าดอกเบี้ยที่ได้ 180 บาท ต้นทุนจริงของการผ่อนจึงสูงกว่า แม้จะเรียกว่าผ่อน 0%'}}],
+m5x:[
+ {id:'cx',where:'u1',title:'จำนวนเชิงซ้อน: i ยกกำลังเท่าใด',q:'เพื่อนคำนวณ i¹⁰⁰ แล้วได้ −1 เพราะ "100 เป็นจำนวนคู่ และ i² = −1" ถูกหรือไม่',data:'',model:{C:'ไม่ถูก i¹⁰⁰ = 1',E:'i¹ = i, i² = −1, i³ = −i, i⁴ = 1 วนรอบทุก 4 · 100 ÷ 4 เหลือเศษ 0',R:'เศษ 0 ตรงกับ i⁴ = 1 ไม่ใช่ i² ดังนั้นต้องดูเศษจากการหารด้วย 4 ไม่ใช่ดูแค่ว่าเป็นคู่หรือคี่'}},
+ {id:'cnt',where:'u2',title:'การนับ: รหัสผ่านแบบไหนปลอดภัยกว่า',q:'รหัสผ่าน A: ตัวเลข 6 หลัก (0–9 ซ้ำได้) · รหัสผ่าน B: ตัวอักษรอังกฤษพิมพ์เล็ก 4 ตัว (26 ตัว ซ้ำได้) แบบใดเดาได้ยากกว่า',data:'',model:{C:'แบบ A เดาได้ยากกว่า',E:'A มี 10⁶ = 1,000,000 แบบ · B มี 26⁴ = 456,976 แบบ',R:'ใช้หลักการคูณ จำนวนแบบยิ่งมาก การเดาสุ่มยิ่งยาก 10⁶ มากกว่า 26⁴ ดังนั้นแบบ A ปลอดภัยกว่า'}},
+ {id:'pr',where:'u3',title:'ความน่าจะเป็น: สุ่มตัวแทนห้อง',q:'สุ่มนักเรียน 2 คนจากห้องที่มีชาย 12 คน หญิง 18 คน เพื่อนบอกว่า "โอกาสได้ชายทั้งคู่คือ 12/30 × 12/30" ถูกหรือไม่',data:'',model:{C:'ไม่ถูก ความน่าจะเป็นคือ 22/145',E:'เลือก 2 จาก 30 ได้ C(30, 2) = 435 แบบ · ชายทั้งคู่ C(12, 2) = 66 แบบ → 66/435 = 22/145',R:'สุ่มคนเดิมซ้ำไม่ได้ เหตุการณ์ไม่อิสระกัน คนที่สองจึงเหลือชาย 11 จาก 29 คน (12/30 × 11/29 = 22/145) ไม่ใช่ 12/30 ซ้ำ'}}]};
+
+KReason({site:'m5x',ctx:()=>window.M5X?M5X():{},tasks:KREASON_TASKS.m5x,
+ place:t=>{const u=UNITS.find(x=>'u'+x.u===t.where);const p=document.getElementById('b-pr');if(!u||!p)return null;const cur=decodeURIComponent(location.hash.slice(1)).split('/')[0];return u.topics[u.topics.length-1]===cur?p.parentNode:null},
+ hook:f=>addEventListener('m5topic',()=>setTimeout(f,0))});
 </script>
 </html>
