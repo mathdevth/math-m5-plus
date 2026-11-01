@@ -693,7 +693,7 @@ function test(ui,type){let warned=false;const u=UNITINFO[ui],qs=[];for(let i=0;i
 /* ---------- แดชบอร์ดครู ---------- */
 function td(v){if(!v)return'–';const d=v.toDate?v.toDate():new Date(v);return d.toLocaleDateString('th-TH',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}
 function csv(rows,name){const t='﻿'+rows.map(r=>r.map(x=>`"${String(x??'').replace(/"/g,'""')}"`).join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv'}));a.download=name;a.click()}
-function teacher(){H().innerHTML=`<h2><span class="n">00</span>แดชบอร์ดครู · คณิตเพิ่มเติม ม.5</h2><div class="tabs2" id="tTabs">${['นักเรียน','คะแนนทดสอบ','เรื่องอยากบอก','สร้างบัญชี','เปิดเฉลย'].map((x,i)=>`<button type="button" data-i="${i}" aria-pressed="${i===0}">${x}<span id="tB${i}"></span></button>`).join('')}</div><div id="tBody"></div><div class="fbr"><button id="outB">ออกจากระบบ</button></div>`;
+function teacher(){H().innerHTML=`<h2><span class="n">00</span>แดชบอร์ดครู · คณิตเพิ่มเติม ม.5</h2><div class="tabs2" id="tTabs">${['นักเรียน','คะแนนรายบท','เรื่องอยากบอก','สร้างบัญชี','เปิดเฉลย'].map((x,i)=>`<button type="button" data-i="${i}" aria-pressed="${i===0}">${x}<span id="tB${i}"></span></button>`).join('')}</div><div id="tBody"></div><div class="fbr"><button id="outB">ออกจากระบบ</button></div>`;
  $('outB').onclick=()=>DB.auth.signOut();const bs=[...H().querySelectorAll('#tTabs button')];bs.forEach(b=>b.onclick=()=>{bs.forEach(x=>x.setAttribute('aria-pressed',x===b));[tStu,tTest,tFeel,tNew,tKeys][+b.dataset.i]()});tStu();
  DB.q('feelings',[['read','==',false]]).then(r=>{if(r.length)$('tB2').textContent=` (${r.length})`}).catch(()=>{})}
 async function tStu(){const B=$('tBody');B.innerHTML='<p class="mut">กำลังโหลด…</p>';let s=[];try{s=await DB.q(COL.stu)}catch(e){B.innerHTML='<p class="err">โหลดไม่สำเร็จ ตรวจสอบกฎ (Rules) ของ Firestore ว่าเพิ่มส่วนของ ม.5 แล้ว</p>';return}
@@ -702,7 +702,8 @@ async function tStu(){const B=$('tBody');B.innerHTML='<p class="mut">กำล�
   B.innerHTML=`<div class="fbr"><select id="tC" style="width:auto;font:inherit;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);color:var(--ink)">${['<option value="">ทุกห้อง ('+s.length+' คน)</option>',...cls.map(c=>`<option ${c===f?'selected':''}>${esc(c)}</option>`)].join('')}</select><button id="tCsv">ดาวน์โหลด CSV</button></div>
   ${!s.length?'<p class="empty">ยังไม่มีบัญชีนักเรียน ม.5 · ไปที่แท็บ “สร้างบัญชี” เพื่อเพิ่มรายชื่อ</p>':''}<div class="tb2" style="margin-top:10px"${!s.length?' hidden':''}><table><tr><th>ชั้น</th><th>เลขที่</th><th>เลขประจำตัว</th><th>ชื่อ</th><th>หัวข้อที่ผ่าน</th><th>ข้อที่ทำ</th><th>อยู่บท</th><th>เข้าใช้</th><th>ล่าสุด</th></tr>${r.map(x=>{const t=x.topics||{};return`<tr><td>${esc(x.cls)}</td><td>${esc(x.no)}</td><td>${esc(x.sid)}</td><td>${esc(x.name)}</td><td>${passed(t)}/${TOPICS.length}</td><td>${Object.values(t).reduce((a,v)=>a+(v.done||0),0)}</td><td>${esc(x.atName||'–')}</td><td>${x.visits||0}</td><td>${td(x.lastSeen)}</td></tr>`}).join('')}</table></div>`;
   $('tC').onchange=e=>{f=e.target.value;draw()};$('tCsv').onclick=()=>csv([['ชั้น','เลขที่','เลขประจำตัว','ชื่อ','หัวข้อที่ผ่าน','ข้อที่ทำ','อยู่บท','เข้าใช้','ล่าสุด'],...r.map(x=>[x.cls,x.no,x.sid,x.name,passed(x.topics||{}),Object.values(x.topics||{}).reduce((a,v)=>a+(v.done||0),0),x.atName||'',x.visits||0,td(x.lastSeen)])],'m5x-students.csv')};draw()}
-async function tTest(){const B=$('tBody');B.innerHTML='<p class="mut">กำลังโหลด…</p>';let t=[];try{t=await DB.q(COL.test,null,['time','desc'],3000)}catch(e){B.innerHTML='<p class="err">โหลดไม่สำเร็จ</p>';return}
+async function tTest(){return KKTV({DB,box:$('tBody'),col:COL.test,stuCol:COL.stu,termLabel:'ภาค',filter:x=>String(x.unitName||'').startsWith('เพิ่มเติม'),old:tTestOld})}
+async function tTestOld(){const B=$('tBody');B.innerHTML='<p class="mut">กำลังโหลด…</p>';let t=[];try{t=await DB.q(COL.test,null,['time','desc'],3000)}catch(e){B.innerHTML='<p class="err">โหลดไม่สำเร็จ</p>';return}
  if(!t.length){B.innerHTML='<p class="empty">ยังไม่มีคะแนนทดสอบ · คะแนนจะขึ้นเมื่อนักเรียนทำแบบทดสอบก่อน/หลังเรียน</p>';return}
  const g={};t.forEach(x=>{const k=`${x.cls}|${x.unit}|${x.unitName}`;const o=g[k]=g[k]||{pre:[],post:[]};(o[x.type]||o.pre).push(x.score/x.total*100)});const av=a=>a.length?(a.reduce((p,c)=>p+c,0)/a.length).toFixed(1):'–';
  B.innerHTML=`<p class="mut">ค่าเฉลี่ยร้อยละ นับทุกครั้งที่ส่ง</p><div class="tb2"><table><tr><th>ชั้น</th><th>หน่วย</th><th>ก่อนเรียน</th><th>หลังเรียน</th><th>ผลต่าง</th></tr>${Object.entries(g).sort().map(([k,o])=>{const [c,un,n]=k.split('|'),a=av(o.pre),b=av(o.post);return`<tr><td>${esc(c)}</td><td>หน่วย ${un} ${esc(n)}</td><td>${a} (${o.pre.length})</td><td>${b} (${o.post.length})</td><td>${a!=='–'&&b!=='–'?(b-a).toFixed(1):'–'}</td></tr>`}).join('')}</table></div>
@@ -758,4 +759,76 @@ init();
 
 </script>
 </body>
+<script>
+/* ===== คะแนนทดสอบ: ดูรายบท → รายคน → ลบรายครั้ง (ใช้ร่วมทุกเว็บ) ===== */
+window.KKTV=async function(o){
+const B=o.box,esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+if(!document.getElementById('kktvcss')){const st=document.createElement('style');st.id='kktvcss';st.textContent=`
+.kktv{--kl:color-mix(in srgb,currentColor 14%,transparent);--ks:color-mix(in srgb,currentColor 5%,transparent)}
+.kktv .kbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0 12px}
+.kktv .kgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.kktv .kcard{text-align:left;display:block;width:100%;border:1px solid var(--kl);border-radius:14px;padding:12px 14px;background:var(--ks);cursor:pointer;font:inherit;color:inherit;line-height:1.45}
+.kktv .kcard:hover{border-color:currentColor}.kktv .kcard b{display:block;font-size:16px}.kktv .kcard small{display:block;opacity:.72;font-size:13px;margin-top:4px}
+.kktv .kbadge{display:inline-block;border-radius:999px;padding:0 9px;font-size:12.5px;font-weight:700;margin-right:6px;color:#fff}
+.kktv .g4{background:#15803d}.kktv .g3{background:#65a30d}.kktv .g2{background:#d97706}.kktv .g1{background:#dc2626}.kktv .g0{background:#94a3b8}
+.kktv table{border-collapse:collapse;width:100%;min-width:560px;font-size:15px}.kktv .tw{overflow-x:auto}
+.kktv th,.kktv td{border-bottom:1px solid var(--kl);padding:7px 8px;text-align:left;vertical-align:top}.kktv th{font-size:13px;opacity:.75;font-weight:600}
+.kktv td.n{text-align:center;font-variant-numeric:tabular-nums;font-weight:600}
+.kktv tr.att td{background:var(--ks);font-size:14px}.kktv tr.att td:first-child{border-left:4px solid currentColor}
+.kktv .del{border:1px solid #dc2626;color:#dc2626;background:transparent;border-radius:8px;padding:2px 10px;font:inherit;font-size:13px;cursor:pointer;min-height:30px}
+.kktv .del:hover{background:#dc2626;color:#fff}
+.kktv .mini{border-radius:8px;padding:2px 10px;font-size:13.5px;min-height:32px;cursor:pointer}
+.kktv .msg{margin:8px 0;padding:8px 12px;border-radius:10px;background:var(--ks)}
+.kktv .none{margin-top:12px;font-size:14px;opacity:.85}`;document.head.appendChild(st)}
+B.innerHTML='<p>กำลังโหลด…</p>';
+let T=[],S=[];
+try{[T,S]=await Promise.all([o.DB.q(o.col,null,['time','desc'],3000),o.stuCol?o.DB.q(o.stuCol).catch(()=>[]):[]])}catch(e){B.innerHTML='<p>โหลดคะแนนไม่สำเร็จ ตรวจสอบกฎ Firestore</p>';return}
+if(o.filter)T=T.filter(o.filter);
+const ms=v=>v?.toDate?v.toDate().getTime():(v?.seconds?v.seconds*1000:(v?new Date(v).getTime():0));
+const td=v=>{const t=ms(v);return t?new Date(t).toLocaleString('th-TH',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'–'};
+const pc=x=>x.total?Math.round(x.score/x.total*100):0,gr=v=>v==null?0:v>=85?4:v>=70?3:v>=50?2:1;
+const TY={pre:'ก่อนเรียน',post:'หลังเรียน',onet:'O-NET'};
+const clsAll=[...new Set(T.map(x=>x.cls).concat(S.map(x=>x.cls)).filter(Boolean))].sort((a,b)=>String(a).localeCompare(b,'th',{numeric:true}));
+let cls=o._cls&&clsAll.includes(o._cls)?o._cls:'*',unit=null,open=new Set(),msg='';
+const del=async x=>{if(o.DB.del)return o.DB.del(o.col+'/'+x.id);return firebase.firestore().collection(o.col).doc(x.id).delete()};
+const unitsOf=L=>{const m=new Map();L.forEach(x=>{const k=x.type==='onet'?'onet':`${x.term}-${x.unit}`;if(!m.has(k))m.set(k,{k,term:+x.term||0,unit:+x.unit||0,name:x.type==='onet'?'O-NET เสมือนจริง':String(x.unitName||'').replace(/^เพิ่มเติม:\s*/,'')});});
+ return [...m.values()].sort((a,b)=>(a.k==='onet')-(b.k==='onet')||a.term-b.term||a.unit-b.unit)};
+function inCls(x){return cls==='*'||x.cls===cls}
+function home(){const L=T.filter(inCls),U=unitsOf(L);const stu=S.filter(inCls);
+ B.innerHTML=`<div class="kktv"><div class="kbar"><label>ห้อง <select id="kkC"><option value="*">ทุกห้อง</option>${clsAll.map(c=>`<option ${c===cls?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
+ <span style="opacity:.75;font-size:14px">${L.length} ครั้งที่ส่ง · เลือกบทเพื่อดูรายคน</span>${o.old?'<button type="button" class="mini" id="kkOld">ตารางสรุปแบบเดิม + CSV</button>':''}</div>
+ ${msg?`<p class="msg">${msg}</p>`:''}
+ ${U.length?`<div class="kgrid">${U.map(u=>{const X=L.filter(x=>(u.k==='onet'?x.type==='onet':`${x.term}-${x.unit}`===u.k));const who=new Set(X.map(x=>x.uid||x.sid));
+  const post=lastBy(X.filter(x=>x.type==='post')),pre=X.filter(x=>x.type==='pre');const pv=Object.values(post).map(pc);const av=pv.length?Math.round(pv.reduce((a,b)=>a+b,0)/pv.length):null;
+  const low=pv.filter(v=>v<50).length;
+  return`<button type="button" class="kcard" data-k="${u.k}"><b>${u.k==='onet'?'🏆 ':''}${u.k==='onet'?'':`${o.termLabel||'ภาค'} ${u.term} · หน่วย ${u.unit} `}${esc(u.name)}</b>
+  <small><span class="kbadge g${gr(av)}">${av==null?'–':av+'%'}</span>เฉลี่ย${u.k==='onet'?' (ครั้งล่าสุด)':'หลังเรียน'}</small>
+  <small>ทำแล้ว ${who.size}${stu.length?'/'+stu.length:''} คน · ก่อนเรียน ${pre.length} ครั้ง · หลังเรียน ${X.filter(x=>x.type==='post').length} ครั้ง${low?` · <span style="color:#dc2626;font-weight:700">ต่ำกว่า 50%: ${low} คน</span>`:''}</small></button>`}).join('')}</div>`:'<p>ยังไม่มีคะแนนทดสอบในห้องนี้</p>'}</div>`;
+ B.querySelector('#kkC').onchange=e=>{cls=e.target.value;o._cls=cls;home()};const ob=B.querySelector('#kkOld');if(ob)ob.onclick=()=>o.old();
+ B.querySelectorAll('.kcard').forEach(b=>b.onclick=()=>{unit=b.dataset.k;open=new Set();msg='';detail()})}
+function lastBy(X){const r={};X.forEach(x=>{const k=x.uid||x.sid;if(!r[k]||ms(x.time)>ms(r[k].time))r[k]=x});return r}
+function detail(){const L=T.filter(inCls),u=unitsOf(T).find(z=>z.k===unit);if(!u){unit=null;return home()}
+ const X=L.filter(x=>unit==='onet'?x.type==='onet':`${x.term}-${x.unit}`===unit);
+ const people=new Map();X.forEach(x=>{const k=x.uid||x.sid;if(!people.has(k)){const s=S.find(z=>(z.id===x.uid)||(z.sid&&z.sid===x.sid));people.set(k,{k,name:x.name||s?.name,cls:x.cls||s?.cls,no:s?.no??'',a:[]})}people.get(k).a.push(x)});
+ const P=[...people.values()].sort((a,b)=>String(a.cls).localeCompare(b.cls,'th',{numeric:true})||(+a.no||0)-(+b.no||0)||String(a.name).localeCompare(b.name,'th'));
+ const done=new Set(P.map(p=>p.k));const none=S.filter(inCls).filter(s=>!done.has(s.id)&&!done.has(s.sid)).sort((a,b)=>String(a.cls).localeCompare(b.cls,'th',{numeric:true})||(+a.no||0)-(+b.no||0));
+ const isO=unit==='onet';
+ B.innerHTML=`<div class="kktv"><div class="kbar"><button type="button" class="mini" id="kkBack">← ทุกบท</button><b>${isO?'O-NET เสมือนจริง':`${o.termLabel||'ภาค'} ${u.term} · หน่วย ${u.unit} ${esc(u.name)}`}</b><span style="opacity:.75;font-size:14px">${cls==='*'?'ทุกห้อง':'ห้อง '+esc(cls)} · ${P.length} คน</span>
+ <button type="button" class="mini" id="kkAll">${open.size?'ซ่อนรายครั้งทั้งหมด':'เปิดรายครั้งทุกคน'}</button></div>${msg?`<p class="msg">${msg}</p>`:''}
+ <div class="tw"><table><tr><th>ชั้น</th><th>เลขที่</th><th>ชื่อ</th>${isO?'<th>ครั้งล่าสุด</th><th>สูงสุด</th>':'<th>ก่อนเรียน (ครั้งแรก)</th><th>หลังเรียน (ล่าสุด)</th>'}<th>ทำทั้งหมด</th><th></th></tr>
+ ${P.map(p=>{const a=p.a.sort((x,y)=>ms(x.time)-ms(y.time)),pre=a.filter(x=>x.type==='pre'),po=a.filter(x=>x.type==='post');
+  const c1=isO?(a.length?pc(a[a.length-1]):null):(pre.length?pc(pre[0]):null),c2=isO?(a.length?Math.max(...a.map(pc)):null):(po.length?pc(po[po.length-1]):null);
+  const row=`<tr><td>${esc(p.cls)}</td><td>${esc(p.no)}</td><td>${esc(p.name)}</td><td class="n">${c1==null?'–':`<span class="kbadge g${gr(c1)}">${c1}%</span>`}</td><td class="n">${c2==null?'–':`<span class="kbadge g${gr(c2)}">${c2}%</span>`}</td><td class="n">${a.length}</td><td><button type="button" class="mini kkOpen" data-p="${esc(p.k)}">${open.has(p.k)?'ซ่อน ▴':'ดูรายคน ▾'}</button></td></tr>`;
+  return row+(open.has(p.k)?a.map(x=>`<tr class="att"><td colspan="3">${td(x.time)}</td><td>${TY[x.type]||x.type}</td><td class="n">${x.score}/${x.total} (${pc(x)}%)</td><td colspan="2"><button type="button" class="del" data-id="${esc(x.id)}">🗑 ลบครั้งนี้</button></td></tr>`).join(''):'')}).join('')||'<tr><td colspan="7">ยังไม่มีใครทำบทนี้</td></tr>'}</table></div>
+ ${none.length?`<p class="none"><b>ยังไม่ได้ทำ ${none.length} คน:</b> ${none.map(s=>`${esc(s.no)} ${esc(s.name)}`).join(' · ')}</p>`:''}
+ <p style="font-size:13px;opacity:.7;margin-top:8px">ลบเฉพาะครั้งที่ทำผิดบทหรือทดลองส่ง การลบกู้คืนไม่ได้ คะแนนครั้งอื่นของนักเรียนยังอยู่ครบ</p></div>`;
+ B.querySelector('#kkBack').onclick=()=>{unit=null;msg='';home()};
+ B.querySelector('#kkAll').onclick=()=>{open=open.size?new Set():new Set(P.map(p=>p.k));detail()};
+ B.querySelectorAll('.kkOpen').forEach(b=>b.onclick=()=>{const k=b.dataset.p;open.has(k)?open.delete(k):open.add(k);detail()});
+ B.querySelectorAll('.del').forEach(b=>b.onclick=async()=>{const x=T.find(z=>z.id===b.dataset.id);if(!x)return;
+  if(!confirm(`ลบคะแนน${TY[x.type]||''} ของ ${x.name}\n${td(x.time)} · ${x.score}/${x.total}\n\nลบแล้วกู้คืนไม่ได้ ยืนยันหรือไม่`))return;
+  b.disabled=true;b.textContent='กำลังลบ…';try{await del(x);T=T.filter(z=>z.id!==x.id);msg=`ลบคะแนนของ ${esc(x.name)} (${td(x.time)}) แล้ว`}catch(e){msg='ลบไม่สำเร็จ ตรวจว่าเข้าสู่ระบบด้วยบัญชีครู'}detail()})}
+home()};
+
+</script>
 </html>
